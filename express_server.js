@@ -60,6 +60,13 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+// clicking delete button removes the table row on "/" associated with the id(shortURL)
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect("/urls");
+})
+
 // click shortURL or request /u/shortURL = redirect to longURL
 // edge cases: no matching id = error; no protocol (http://) = add protocol & redirect
 app.get("/u/:id", (req, res) => {
