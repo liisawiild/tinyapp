@@ -71,7 +71,7 @@ app.get("/u/:id", (req, res) => {
   if (longURL.startsWith('http://') || longURL.startsWith('https://')) {
     return res.redirect(longURL);
   } 
-    return res.redirect(`http://${longURL}`);
+    return res.redirect(`https://${longURL}`);
 });
 
 app.get("/urls.json", (req, res) => {
