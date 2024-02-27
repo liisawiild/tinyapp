@@ -66,12 +66,12 @@ app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id] === undefined) {
     return res.redirect('/u/error');
-  } 
+  }
   const longURL = urlDatabase[id];
   if (longURL.startsWith('http://') || longURL.startsWith('https://')) {
     return res.redirect(longURL);
-  } 
-    return res.redirect(`https://${longURL}`);
+  }
+  return res.redirect(`https://${longURL}`);
 });
 
 app.get("/urls.json", (req, res) => {
