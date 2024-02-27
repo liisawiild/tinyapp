@@ -55,10 +55,13 @@ app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id] === undefined) {
     return res.redirect('/u/error');
-  } else {
-    const longURL = urlDatabase[id];
-    return res.redirect(longURL);
-  }
+  } 
+  const longURL = urlDatabase[id];
+  if (longURL[0] !== "h") {
+    return res.redirect(`http://${longURL}`);
+  } 
+  return res.redirect(longURL);
+  
 });
 
 app.get("/urls.json", (req, res) => {
