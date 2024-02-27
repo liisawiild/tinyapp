@@ -24,6 +24,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
+// render a new tiny URL request
+app.get("/urls/new", (req, res) => {
+  res.render('urls_new');
+})
+
 // makes id (shortened URL) and long URL accessible to urls_show
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]}
