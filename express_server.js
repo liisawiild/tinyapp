@@ -26,6 +26,12 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
+// responds to a POST with the body of the request (to server) and ok (to client/browser)
+app.post("/urls", (req, res) => {
+  console.log(req.body); 
+  res.send("Ok");
+})
+
 // render the new tiny URL form
 app.get("/urls/new", (req, res) => {
   res.render('urls_new');
