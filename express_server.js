@@ -2,6 +2,16 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+// generate a random short URL ID
+const generateRandomString = function() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let shortURL = "";
+  for (let i = 0; i < 6; i++) {
+    shortURL += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return shortURL;
+};
+
 // set ejs as the view engine
 app.set("view engine", "ejs");
 
@@ -35,7 +45,7 @@ app.get('/u/error', (req, res) => {
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`);
 });
 
@@ -58,11 +68,10 @@ app.get("/u/:id", (req, res) => {
     return res.redirect('/u/error');
   } 
   const longURL = urlDatabase[id];
-  if (longURL[0] !== "h") {
-    return res.redirect(`http://${longURL}`);
+  if (longURL.startsWith('http://') || longURL.startsWith('https://')) {
+    return res.redirect(longURL);
   } 
-  return res.redirect(longURL);
-  
+    return res.redirect(`http://${longURL}`);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -74,12 +83,3 @@ app.listen(PORT, () => {
 });
 
 
-// generate a random short URL ID
-const generateRandomString = function() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let shortURL = "";
-  for (let i = 0; i < 6; i++) {
-    shortURL += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return shortURL;
-};
