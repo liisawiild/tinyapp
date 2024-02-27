@@ -51,6 +51,7 @@ app.get('/urls/:id', (req, res) => {
 });
 
 // click shortURL or request /u/shortURL = redirect to longURL
+// edge cases: no matching id = error; no protocol (http://) = add protocol & redirect
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id] === undefined) {
