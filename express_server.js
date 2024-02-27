@@ -26,10 +26,12 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
-// responds to a POST with the body of the request (to server) and ok (to client/browser)
+// responds to a POST with redirect to page with new id and input longURL
 app.post("/urls", (req, res) => {
-  console.log(req.body); 
-  res.send("Ok");
+  const id = generateRandomString();
+  const longURL = req.body.longURL;
+  urlDatabase[id] = req.body.longURL; 
+  res.redirect(`/urls/${id}`);
 })
 
 // render the new tiny URL form
@@ -57,7 +59,7 @@ function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWYZabcdefghijklmnopqrstuvwxyz0123456789';
   let shortURL = "";
   for (let i = 0; i < 6; i++) {
-    randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+    shortURL += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return shortURL;
 };
