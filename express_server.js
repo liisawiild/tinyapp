@@ -26,6 +26,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 })
 
+// error message page for no ID/long URL found 
+app.get('/u/error', (req, res) => {
+  res.send('The requested URL does not exist.')
+})
+
 // responds to a POST with redirect to page with new id and input longURL
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
@@ -43,6 +48,13 @@ app.get("/urls/new", (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]}
   res.render('urls_show', templateVars)
+})
+
+// click shortURL or request /u/shortURL = redirect to longURL
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id;   
+  const longURL = urlDatabase[id];  
+  return res.redirect(longURL);
 })
 
 app.get("/urls.json", (req, res) => {
