@@ -17,6 +17,7 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
+      <label for="username" class="col-form-label"><% if (username) { %> Logged in as: <%= username %> <% } %></label>
       <form class="form-inline" method="POST" action="/login">
         <div class="col align-self-right">
           <input
