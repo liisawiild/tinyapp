@@ -36,6 +36,14 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// stores username in a username cookie
+app.post('/login', (req, res) => {
+  let loginName = req.body.username;
+  res.cookie(username, loginName);
+  res.redirect('/urls');
+})
+
+
 // error message page for no ID/long URL found
 app.get('/u/error', (req, res) => {
   res.send('The requested URL does not exist.');
