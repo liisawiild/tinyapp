@@ -38,8 +38,8 @@ app.get("/urls", (req, res) => {
 
 // stores username in a username cookie
 app.post('/login', (req, res) => {
-  let loginName = req.body.username;
-  res.cookie(username, loginName);
+  const loginName = req.body.username;
+  res.cookie("username", loginName);
   res.redirect('/urls');
 })
 
