@@ -60,6 +60,14 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+// update long URL
+app.post('/urls/:id', (req, res) => {
+  const id = req.params.id;
+  const longURL = req.body.longURL
+  urlDatabase[id] = longURL;
+  res.redirect(`/urls/${id}`);
+});
+
 // clicking delete button removes the table row on "/" associated with the id(shortURL)
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
