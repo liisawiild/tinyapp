@@ -41,11 +41,9 @@ app.get("/urls", (req, res) => {
 // stores username in a username cookie
 app.post('/login', (req, res) => {
   const loginName = req.body.username;
-  console.log(loginName);
   res.cookie("username", loginName);
   res.redirect('/urls');
-})
-
+});
 
 // error message page for no ID/long URL found
 app.get('/u/error', (req, res) => {
@@ -75,7 +73,7 @@ app.get('/urls/:id', (req, res) => {
 // update long URL
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
-  const longURL = req.body.longURL
+  const longURL = req.body.longURL;
   urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`);
 });
@@ -85,7 +83,7 @@ app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect("/urls");
-})
+});
 
 // click shortURL or request /u/shortURL = redirect to longURL
 // edge cases: no matching id = error; no protocol (http://) = add protocol & redirect
