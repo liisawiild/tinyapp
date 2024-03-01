@@ -38,7 +38,6 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-
 // stores username in a username cookie
 app.post('/login', (req, res) => {
   const loginName = req.body.username;
@@ -46,11 +45,11 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
+// logout - clear cookie and redirect to /urls
 app.post('/logout', (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
 });
-
 
 // error message page for no ID/long URL found
 app.get('/u/error', (req, res) => {
@@ -65,7 +64,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-// render the new tiny URL form
+// render the new tiny URL form page
 app.get("/urls/new", (req, res) => {
   const templateVars = { username: req.cookies["username"] };
   res.render('urls_new', templateVars);
@@ -110,6 +109,7 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// Establishes server connection
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
