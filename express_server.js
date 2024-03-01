@@ -38,12 +38,19 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+
 // stores username in a username cookie
 app.post('/login', (req, res) => {
   const loginName = req.body.username;
   res.cookie("username", loginName);
   res.redirect('/urls');
 });
+
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
+
 
 // error message page for no ID/long URL found
 app.get('/u/error', (req, res) => {
