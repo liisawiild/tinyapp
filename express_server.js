@@ -31,12 +31,12 @@ const urlDatabase = {
 
 const users = {
   //user_id: { id: "" , email: "", password: "",},  should it be JSON?
-}
-
+};
 
 // set ejs as the view engine
 app.set("view engine", "ejs");
 
+// set encoding to read URLs
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -47,17 +47,19 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-// makes urlDatabase accessible to urls_index
+// render the urls page; urlDatabase and user_id (for _header) are accessible
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
 
+// render the register page; user_id is accessible for _header
 app.get("/register", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("register", templateVars);
 });
 
+// client submits a registration request, email, password, and user_id are save to users obj + edge case handling
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
     return res.sendStatus(400);
@@ -67,21 +69,37 @@ app.post("/register", (req, res) => {
     return res.sendStatus(400);
   }
   const user_id = generateRandomString();
-  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};  
+  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};
   res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
 
-// logs user in
+// renders the login page
 app.get("/login", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("login", templateVars);
 });
 
-// logout - clear cookie and redirect to /urls
+// client submits a login request, server determines if user exists, saves user_id in cookie + edge cases
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = getUserByEmail(email);
+
+  if (user === null || user.password !== password) {
+    return res.sendStatus(403);
+  }
+
+  if (user.email && user.password === password) {
+    res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  }
+});
+
+// client requests to logout - clear cookie and redirect to login page
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 // error message page for no ID/long URL found
@@ -89,7 +107,7 @@ app.get("/u/error", (req, res) => {
   res.send("The requested URL does not exist.");
 });
 
-// responds to a POST with redirect to page with new id and input longURL
+// client submits longURL, server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
   const longURL = req.body.longURL;
@@ -97,19 +115,19 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-// render the new tiny URL form page
+// renders the new tiny URL form page
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
-// makes id (shortened URL) and long URL accessible to urls_show
+// renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
-// update long URL
+// client requests to update long URL and redirects to the same page w/ changes to longURL made
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
@@ -117,15 +135,14 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
-// clicking delete button removes the table row on "/" associated with the id(shortURL)
+// client request to delete an existing tinyURL on the my URLs page
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect("/urls");
 });
 
-// click shortURL or request /u/shortURL = redirect to longURL
-// edge cases: no matching id = error; no protocol (http://) = add protocol & redirect
+// client request to go to the shortURL link redirects to longURL website + edge cases
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id] === undefined) {
@@ -138,6 +155,7 @@ app.get("/u/:id", (req, res) => {
   return res.redirect(`https://${longURL}`);
 });
 
+// client request will result in urlDatabase being sent to the client as a JSON
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
