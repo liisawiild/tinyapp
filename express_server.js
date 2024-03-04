@@ -39,7 +39,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { email: req.params.email, password:req.params.password, username: req.cookies["username"] };
+  const templateVars = { username: req.cookies["username"] };
   res.render("register", templateVars);
 });
 
