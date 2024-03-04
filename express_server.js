@@ -72,12 +72,11 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-// // stores username in a username cookie
-// app.post("/login", (req, res) => {
-//   const loginName = req.body.username;
-//   res.cookie("username", loginName);
-//   res.redirect("/urls");
-// });
+// logs user in
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("login", templateVars);
+});
 
 // logout - clear cookie and redirect to /urls
 app.post("/logout", (req, res) => {
