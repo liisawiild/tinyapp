@@ -14,6 +14,16 @@ const generateRandomString = function() {
   return shortURL;
 };
 
+// user lookup
+const getUserByEmail = function(userEmail) {
+  for (let key in users) {
+    if (users[key].email === userEmail) {
+      return users[key];
+    }
+  }
+  return null;
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -49,8 +59,15 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
+  if (req.body.email === "" || req.body.password === "") {
+    return res.sendStatus(400);
+  }
+
+  if (getUserByEmail(req.body.email) !== null) {
+    return res.sendStatus(400);
+  }
   const user_id = generateRandomString();
-  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};
+  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};  
   res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
