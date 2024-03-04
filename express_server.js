@@ -14,13 +14,18 @@ const generateRandomString = function() {
   return shortURL;
 };
 
-// set ejs as the view engine
-app.set("view engine", "ejs");
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const users = {
+  //user_id: { id: "" , email: "", password: "",},  should it be JSON?
+}
+
+
+// set ejs as the view engine
+app.set("view engine", "ejs");
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,25 +39,32 @@ app.get("/hello", (req, res) => {
 
 // makes urlDatabase accessible to urls_index
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("register", templateVars);
 });
 
-// stores username in a username cookie
-app.post("/login", (req, res) => {
-  const loginName = req.body.username;
-  res.cookie("username", loginName);
+app.post("/register", (req, res) => {
+  const user_id = generateRandomString();
+  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};
+  res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
 
+// // stores username in a username cookie
+// app.post("/login", (req, res) => {
+//   const loginName = req.body.username;
+//   res.cookie("username", loginName);
+//   res.redirect("/urls");
+// });
+
 // logout - clear cookie and redirect to /urls
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -71,13 +83,13 @@ app.post("/urls", (req, res) => {
 
 // render the new tiny URL form page
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
 // makes id (shortened URL) and long URL accessible to urls_show
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
