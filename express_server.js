@@ -38,22 +38,27 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = { email: req.params.email, password:req.params.password, username: req.cookies["username"] };
+  res.render("register", templateVars);
+});
+
 // stores username in a username cookie
-app.post('/login', (req, res) => {
+app.post("/login", (req, res) => {
   const loginName = req.body.username;
   res.cookie("username", loginName);
-  res.redirect('/urls');
+  res.redirect("/urls");
 });
 
 // logout - clear cookie and redirect to /urls
-app.post('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.redirect('/urls');
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
 });
 
 // error message page for no ID/long URL found
-app.get('/u/error', (req, res) => {
-  res.send('The requested URL does not exist.');
+app.get("/u/error", (req, res) => {
+  res.send("The requested URL does not exist.");
 });
 
 // responds to a POST with redirect to page with new id and input longURL
@@ -67,17 +72,17 @@ app.post("/urls", (req, res) => {
 // render the new tiny URL form page
 app.get("/urls/new", (req, res) => {
   const templateVars = { username: req.cookies["username"] };
-  res.render('urls_new', templateVars);
+  res.render("urls_new", templateVars);
 });
 
 // makes id (shortened URL) and long URL accessible to urls_show
-app.get('/urls/:id', (req, res) => {
+app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
-  res.render('urls_show', templateVars);
+  res.render("urls_show", templateVars);
 });
 
 // update long URL
-app.post('/urls/:id', (req, res) => {
+app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
   urlDatabase[id] = longURL;
@@ -85,7 +90,7 @@ app.post('/urls/:id', (req, res) => {
 });
 
 // clicking delete button removes the table row on "/" associated with the id(shortURL)
-app.post('/urls/:id/delete', (req, res) => {
+app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id];
   res.redirect("/urls");
@@ -96,10 +101,10 @@ app.post('/urls/:id/delete', (req, res) => {
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id] === undefined) {
-    return res.redirect('/u/error');
+    return res.redirect("/u/error");
   }
   const longURL = urlDatabase[id];
-  if (longURL.startsWith('http://') || longURL.startsWith('https://')) {
+  if (longURL.startsWith("http://") || longURL.startsWith("https://")) {
     return res.redirect(longURL);
   }
   return res.redirect(`https://${longURL}`);
