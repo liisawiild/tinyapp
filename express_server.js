@@ -96,7 +96,7 @@ app.post("/login", (req, res) => {
   }
 });
 
-// client requests to logout - clear cookie and redirect to login page
+// client requests to logout, server clears cookie and redirects to login page
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/login");
