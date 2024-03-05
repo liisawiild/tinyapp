@@ -108,11 +108,6 @@ app.post("/logout", (req, res) => {
   res.redirect("/login");
 });
 
-// error message page for no ID/long URL found
-app.get("/u/error", (req, res) => {
-  res.send("The requested URL does not exist.");
-});
-
 // client submits longURL, if logged in server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
@@ -165,6 +160,11 @@ app.get("/u/:id", (req, res) => {
     return res.redirect(longURL);
   }
   return res.redirect(`https://${longURL}`);
+});
+
+// error message page for no ID/long URL found
+app.get("/u/error", (req, res) => {
+  res.send("The requested URL does not exist.");
 });
 
 // client request will result in urlDatabase being sent to the client as a JSON
