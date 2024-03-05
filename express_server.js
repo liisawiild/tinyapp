@@ -55,6 +55,9 @@ app.get("/urls", (req, res) => {
 
 // render the register page; user_id is accessible for _header
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("register", templateVars);
 });
@@ -76,6 +79,9 @@ app.post("/register", (req, res) => {
 
 // renders the login page
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("login", templateVars);
 });
