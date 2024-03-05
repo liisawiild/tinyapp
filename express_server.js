@@ -25,8 +25,14 @@ const getUserByEmail = function(userEmail) {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userId: "aJ48lW"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userId: "aJ48lW"
+  },
 };
 
 const users = {
@@ -115,7 +121,7 @@ app.post("/urls", (req, res) => {
   }
   const id = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
+  urlDatabase[id] = { longURL, userId: req.cookies["user_id"] };
   res.redirect(`/urls/${id}`);
 });
 
@@ -130,7 +136,7 @@ app.get("/urls/new", (req, res) => {
 
 // renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -138,7 +144,7 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
+  urlDatabase[id].longURL = longURL;
   res.redirect(`/urls/${id}`);
 });
 
@@ -155,7 +161,7 @@ app.get("/u/:id", (req, res) => {
   if (urlDatabase[id] === undefined) {
     return res.redirect("/u/error");
   }
-  const longURL = urlDatabase[id];
+  const longURL = urlDatabase[id].longURL;
   if (longURL.startsWith("http://") || longURL.startsWith("https://")) {
     return res.redirect(longURL);
   }
