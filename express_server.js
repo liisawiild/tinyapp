@@ -113,16 +113,22 @@ app.get("/u/error", (req, res) => {
   res.send("The requested URL does not exist.");
 });
 
-// client submits longURL, server saves longURL in database & redirects new tinyURL page
+// client submits longURL, if logged in server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.send("<html><body>Login to create a TinyURL</body></html>\n")
+  }
   const id = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`);
 });
 
-// renders the new tiny URL form page
+// if logged in, the server renders the new tiny URL form page
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect("/login");
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
