@@ -24,7 +24,9 @@ const getUserByEmail = function(userEmail) {
   return null;
 };
 
+// url database
 const urlDatabase = {
+  //id: { longURL: "", userID: user_id}
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
     userId: "aJ48lW"
@@ -35,8 +37,20 @@ const urlDatabase = {
   },
 };
 
+// users database
 const users = {
   //user_id: { id: "" , email: "", password: "",},  should it be JSON?
+};
+
+// function to isolate logged in users URLs only (id = req.cookies["user_id"])
+const urlsForUser = function(id) {
+  let userUrls = {};
+  for (let shortURL in urlDatabase) {
+    if (id === urlDatabase[shortURL].userId) {
+      userUrls[shortURL] = { longURL: urlDatabase[shortURL].longURL};
+    }
+  }
+  return userUrls;
 };
 
 // set ejs as the view engine
@@ -55,7 +69,12 @@ app.get("/hello", (req, res) => {
 
 // render the urls page; urlDatabase and user_id (for _header) are accessible
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  if (!req.cookies["user_id"]) {
+    const templateVars = { urls: null, user: null }
+    return res.render("urls_index", templateVars);
+  }
+  let userUrls = urlsForUser(req.cookies["user_id"]);
+  const templateVars = { urls: userUrls, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
 
@@ -117,11 +136,11 @@ app.post("/logout", (req, res) => {
 // client submits longURL, if logged in server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.send("<html><body>Login to create a TinyURL</body></html>\n")
+    return res.status(403).send('<html><body><p>You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a></p></body></html>\n'); 
   }
   const id = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = { longURL, userId: req.cookies["user_id"] };
+  urlDatabase[id] = { longURL: longURL, userId: req.cookies["user_id"] };
   res.redirect(`/urls/${id}`);
 });
 
@@ -136,6 +155,9 @@ app.get("/urls/new", (req, res) => {
 
 // renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.status(403).send('<html><body><p>You must be logged in to view your TinyURLs. Please <a href="/login">login</a> or <a href="/register">register.</a></p></body></html>\n'); 
+  }
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
