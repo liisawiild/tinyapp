@@ -26,7 +26,7 @@ const getUserByEmail = function(userEmail) {
 
 // url database
 const urlDatabase = {
-  //id: { longURL: "", userID: user_id}
+  //shortURL: { longURL: "", userID: user_id}
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
     userId: "aJ48lW"
@@ -39,15 +39,15 @@ const urlDatabase = {
 
 // users database
 const users = {
-  //user_id: { id: "" , email: "", password: "",},  should it be JSON?
+  aJ48lW: { id: "aJ48lW" , email: "a@a.com", password: "123"}
 };
 
-// function to isolate logged in users URLs only (id = req.cookies["user_id"])
+// function to isolate logged in users URLs only (id = req.cookies["user_id"]).
 const urlsForUser = function(id) {
   let userUrls = {};
   for (let shortURL in urlDatabase) {
     if (id === urlDatabase[shortURL].userId) {
-      userUrls[shortURL] = { longURL: urlDatabase[shortURL].longURL};
+      userUrls[shortURL] = { longURL: urlDatabase[shortURL].longURL, userId: urlDatabase[shortURL].userId };
     }
   }
   return userUrls;
@@ -69,21 +69,23 @@ app.get("/hello", (req, res) => {
 
 // render the urls page; urlDatabase and user_id (for _header) are accessible
 app.get("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
-    const templateVars = { urls: null, user: null }
+  const userId = req.cookies["user_id"];
+  if (!userId) {
+    const templateVars = { urls: null, user: null, message: "Access denied. Register or Login to proceed." }
     return res.render("urls_index", templateVars);
   }
-  let userUrls = urlsForUser(req.cookies["user_id"]);
-  const templateVars = { urls: userUrls, user: users[req.cookies["user_id"]] };
+  let userUrls = urlsForUser(userId);
+  const templateVars = { urls: userUrls, user: users[userId], message: ""  };
   res.render("urls_index", templateVars);
 });
 
 // render the register page; user_id is accessible for _header
 app.get("/register", (req, res) => {
-  if (req.cookies["user_id"]) {
+  const userId = req.cookies["user_id"];
+  if (userId) {
     return res.redirect("/urls");
   }
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[userId] };
   res.render("register", templateVars);
 });
 
@@ -104,10 +106,11 @@ app.post("/register", (req, res) => {
 
 // renders the login page
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {
+  const userId = req.cookies["user_id"];
+  if (userId) {
     return res.redirect("/urls");
   }
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[userId] };
   res.render("login", templateVars);
 });
 
@@ -135,39 +138,66 @@ app.post("/logout", (req, res) => {
 
 // client submits longURL, if logged in server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  const userId = req.cookies["user_id"];
+  if (!userId) {
     return res.status(403).send('<html><body><p>You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a></p></body></html>\n'); 
   }
   const id = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = { longURL: longURL, userId: req.cookies["user_id"] };
+  urlDatabase[id] = { longURL: longURL, userId: userId };
   res.redirect(`/urls/${id}`);
 });
 
 // if logged in, the server renders the new tiny URL form page
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  const userId = req.cookies["user_id"];
+  if (!userId) {
     return res.redirect("/login");
   }
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[userId] };
   res.render("urls_new", templateVars);
 });
 
 // renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
-  if (!req.cookies["user_id"]) {
-    return res.status(403).send('<html><body><p>You must be logged in to view your TinyURLs. Please <a href="/login">login</a> or <a href="/register">register.</a></p></body></html>\n'); 
+  const userId = req.cookies["user_id"];
+
+  if (!userId) {
+    const templateVars = { shortURL: null, longURL: "", user: null, message: "LOGIN TO PROCEED" };
+    return res.render("urls_show", templateVars);
   }
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]] };
+
+  const user = users[userId]
+  if (!user) {
+    res.clearCookie("user_id");
+    const templateVars = { shortURL: null, longURL: "", user: null, message: "LOGIN TO PROCEED" };
+    return res.render("urls_show", templateVars);
+  }
+
+  const shortURL = req.params.id;
+  const urlObj = urlDatabase[shortURL];
+  const templateVars = { shortURL, user, message: "", longURL: ""};
+ 
+  if (!urlObj) {
+    templateVars.message = "Short URL does not exist";
+    return res.render("urls_show", templateVars);
+  }
+
+  if (userId !== urlObj.userId) {
+    templateVars.message = "Permission denied";
+    return res.render("urls_show", templateVars);
+  }
+
+  templateVars.longURL = urlObj.longURL;
   res.render("urls_show", templateVars);
 });
 
 // client requests to update long URL and redirects to the same page w/ changes to longURL made
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
+  const shortURL = req.params.id;
   const longURL = req.body.longURL;
-  urlDatabase[id].longURL = longURL;
-  res.redirect(`/urls/${id}`);
+  urlDatabase[shortURL].longURL = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 // client request to delete an existing tinyURL on the my URLs page
