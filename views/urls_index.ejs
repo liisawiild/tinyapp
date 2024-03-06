@@ -32,22 +32,24 @@
         </thead>
         <tbody>
           
-          <% for (let id in urls) { %>
+          <% for (let shortURL in urls) { %>
             <tr>
-              <td><%= id %></td>
-              <td><%= urls[id].longURL %></td>
-              <td><form method="POST" action="/urls/<%= id %>"><button type="submit" class="btn btn-outline-primary">Edit</button></form></td>
-              <td><form method="POST" action="/urls/<%= id %>/delete"><button type="submit" class="btn btn-outline-danger">Delete</button></form></td>
+              <td><%= shortURL %></td>
+              <td><%= urls[shortURL].longURL %></td>
+              <td><form method="POST" action="/urls/<%= shortURL %>"><button type="submit" class="btn btn-outline-primary">Edit</button></form></td>
+              <td><form method="POST" action="/urls/<%= shortURL %>/delete"><button type="submit" class="btn btn-outline-danger">Delete</button></form></td>
             </tr>
           <% } %>
         </tbody>
       </table>
       <% } %>
 
-      <% if (user === null) { %>
-        <h3>Access Denied</h3>
-        <p>You must be logged in to view your TinyURLs</p>
-      <% } %>
+      
+        <h4><%= message %></h4>
+       
+      
+
+      
     </main>
     <!-- Bootstrap JS -->
     <script
