@@ -188,7 +188,7 @@ app.get("/urls/:id", (req, res) => {
     return res.render("urls_show", templateVars);
   }
 
-  templateVars.longURL = urlObj.longURL;
+  templateVars.longURL = urlObj.longURL;          //there seems to be a glitch here - longURL doesn't always show up
   res.render("urls_show", templateVars);
 });
 
@@ -209,11 +209,11 @@ app.post("/urls/:id/delete", (req, res) => {
 
 // client request to go to the shortURL link redirects to longURL website + edge cases
 app.get("/u/:id", (req, res) => {
-  const id = req.params.id;
-  if (urlDatabase[id] === undefined) {
+  const shortURL = req.params.id;
+  if (urlDatabase[shortURL] === undefined) {
     return res.redirect("/u/error");
   }
-  const longURL = urlDatabase[id].longURL;
+  const longURL = urlDatabase[shortURL].longURL;
   if (longURL.startsWith("http://") || longURL.startsWith("https://")) {
     return res.redirect(longURL);
   }
