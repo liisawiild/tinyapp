@@ -71,11 +71,14 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   if (!userId) {
-    const templateVars = { urls: null, user: null, message: "Access denied. Register or Login to proceed." }
-    return res.render("urls_index", templateVars);
+    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
   }
-  let userUrls = urlsForUser(userId);
-  const templateVars = { urls: userUrls, user: users[userId], message: ""  };
+
+  const userUrls = urlsForUser(userId);
+  const templateVars = { 
+    urls: userUrls, 
+    user: users[userId]
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -85,7 +88,10 @@ app.get("/register", (req, res) => {
   if (userId) {
     return res.redirect("/urls");
   }
-  const templateVars = { user: users[userId] };
+
+  const templateVars = { 
+    user: users[userId] 
+  };
   res.render("register", templateVars);
 });
 
@@ -98,8 +104,13 @@ app.post("/register", (req, res) => {
   if (getUserByEmail(req.body.email) !== null) {
     return res.sendStatus(400);
   }
+
   const user_id = generateRandomString();
-  users[user_id] = { id: user_id, email: req.body.email, password: req.body.password};
+  users[user_id] = { 
+    id: user_id, 
+    email: req.body.email, 
+    password: req.body.password
+  };
   res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
@@ -119,7 +130,6 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email);
-
   if (user === null || user.password !== password) {
     return res.sendStatus(403);
   }
@@ -140,11 +150,15 @@ app.post("/logout", (req, res) => {
 app.post("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   if (!userId) {
-    return res.status(403).send('<html><body><p>You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a></p></body></html>\n'); 
+    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n'); 
   }
+
   const id = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = { longURL: longURL, userId: userId };
+  urlDatabase[id] = { 
+    longURL: longURL,
+    userId: userId 
+  };
   res.redirect(`/urls/${id}`);
 });
 
@@ -154,47 +168,57 @@ app.get("/urls/new", (req, res) => {
   if (!userId) {
     return res.redirect("/login");
   }
-  const templateVars = { user: users[userId] };
+
+  const templateVars = { 
+    user: users[userId] 
+  };
   res.render("urls_new", templateVars);
 });
 
 // renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
   const userId = req.cookies["user_id"];
-
   if (!userId) {
-    const templateVars = { shortURL: null, longURL: "", user: null, message: "LOGIN TO PROCEED" };
-    return res.render("urls_show", templateVars);
+    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
   }
 
-  const user = users[userId]
-  if (!user) {
-    res.clearCookie("user_id");
-    const templateVars = { shortURL: null, longURL: "", user: null, message: "LOGIN TO PROCEED" };
-    return res.render("urls_show", templateVars);
-  }
-
-  const shortURL = req.params.id;
-  const urlObj = urlDatabase[shortURL];
-  const templateVars = { shortURL, user, message: "", longURL: ""};
- 
+  const urlObj = urlDatabase[req.params.id];
   if (!urlObj) {
-    templateVars.message = "Short URL does not exist";
-    return res.render("urls_show", templateVars);
+    return res.status(404).send('This short URL does not exist.\n');
+  }
+  
+  const urlBelongsToUser = userId === urlObj.userId
+  if (!urlBelongsToUser) {
+    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
   }
 
-  if (userId !== urlObj.userId) {
-    templateVars.message = "Permission denied";
-    return res.render("urls_show", templateVars);
+  const templateVars = {
+    shortURL: req.params.id,
+    longURL: urlObj.longURL,
+    user: users[userId]
   }
-
-  templateVars.longURL = urlObj.longURL;          //there seems to be a glitch here - longURL doesn't always show up
   res.render("urls_show", templateVars);
 });
 
 // client requests to update long URL and redirects to the same page w/ changes to longURL made
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
+  
+  const userId = req.cookies["user_id"];
+  if (!userId) {
+    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  }
+
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    return res.status(404).send('This short URL does not exist.\n');
+  }
+  
+  const urlBelongsToUser = userId === urlObj.userId
+  if (!urlBelongsToUser) {
+    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  }
+
   const longURL = req.body.longURL;
   urlDatabase[shortURL].longURL = longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -202,18 +226,35 @@ app.post("/urls/:id", (req, res) => {
 
 // client request to delete an existing tinyURL on the my URLs page
 app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
+  const shortURL = req.params.id;
+  const userId = req.cookies["user_id"];
+
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send('This short URL does not exist.\n');
+  }
+
+  if (!userId) {
+    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  }
+
+  const urlObj = urlDatabase[shortURL];
+  if (userId !== urlObj.userId) {
+    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  }
+
+  delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 
 // client request to go to the shortURL link redirects to longURL website + edge cases
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-  if (urlDatabase[shortURL] === undefined) {
+  const urlObj = urlDatabase[shortURL];
+  if (urlObj === undefined) {
     return res.redirect("/u/error");
   }
-  const longURL = urlDatabase[shortURL].longURL;
+
+  const longURL = urlObj.longURL;
   if (longURL.startsWith("http://") || longURL.startsWith("https://")) {
     return res.redirect(longURL);
   }
@@ -222,7 +263,7 @@ app.get("/u/:id", (req, res) => {
 
 // error message page for no ID/long URL found
 app.get("/u/error", (req, res) => {
-  res.send("The requested URL does not exist.");
+  return res.status(404).send('This short URL does not exist.\n');
 });
 
 // client request will result in urlDatabase being sent to the client as a JSON
