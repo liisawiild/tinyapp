@@ -25,6 +25,6 @@ describe('getUserByEmail', function() {
   it('should return undefined if no valid email', function() {
     const user = getUserByEmail("user3@example.com", testUsers)
     const expectedUserID = undefined;
-    assert.isUndefined(expectedUserID);
+    assert.isUndefined(user);
   });
 });
