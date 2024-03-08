@@ -88,7 +88,7 @@ app.post("/register", (req, res) => {
     return res.sendStatus(400);
   }
 
-  if (getUserByEmail(reqEmail, users) !== undefined) {
+  if (getUserByEmail(reqEmail, users) !== null) {
     return res.sendStatus(400);
   }
 
@@ -118,7 +118,7 @@ app.post("/login", (req, res) => {
   const reqEmail = req.body.email;
   const reqPassword = req.body.password;
   const user = getUserByEmail(reqEmail, users);
-  if (user === undefined || bcrypt.compareSync(reqPassword, user.password) === false) {
+  if (user === null || bcrypt.compareSync(reqPassword, user.password) === false) {
     return res.sendStatus(403);
   }
 
