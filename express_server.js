@@ -9,8 +9,6 @@ app.use(cookieSession({
 }));
 const PORT = 8080; // default port 8080
 
-
-
 // url database
 const urlDatabase = {
   //shortURL: { longURL: "", userID: user_id}
@@ -90,7 +88,7 @@ app.post("/register", (req, res) => {
     return res.sendStatus(400);
   }
 
-  if (getUserByEmail(reqEmail, users) !== null) {
+  if (getUserByEmail(reqEmail, users) !== undefined) {
     return res.sendStatus(400);
   }
 
@@ -120,7 +118,7 @@ app.post("/login", (req, res) => {
   const reqEmail = req.body.email;
   const reqPassword = req.body.password;
   const user = getUserByEmail(reqEmail, users);
-  if (user === null || bcrypt.compareSync(reqPassword, user.password) === false) {
+  if (user === undefined || bcrypt.compareSync(reqPassword, user.password) === false) {
     return res.sendStatus(403);
   }
 
