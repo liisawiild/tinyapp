@@ -15,7 +15,7 @@ const getUserByEmail = function(userEmail, database) {
       return database[user];
     }
   }
-  return null;
+  return undefined;
 };
 
 module.exports = { generateRandomString, getUserByEmail }
