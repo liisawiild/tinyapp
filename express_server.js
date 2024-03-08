@@ -41,7 +41,7 @@ const urlDatabase = {
   },
 };
 
-// users database
+// user database
 const users = {
   aJ48lW: { id: "aJ48lW" , email: "a@a.com", password: "123"}  //need hashed password for this user
 };
