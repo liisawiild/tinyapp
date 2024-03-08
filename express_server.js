@@ -3,8 +3,8 @@ const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
 app.use(cookieSession({
-  name: 'session',
-  keys: ['user_id']
+  name: 's3curs3$s!on',
+  keys: ['gr33negg$', 'dontDO!t', 'anDh@m', ]   
 }));
 const PORT = 8080; // default port 8080
 
@@ -19,10 +19,10 @@ const generateRandomString = function() {
 };
 
 // user lookup
-const getUserByEmail = function(userEmail) {
-  for (let key in users) {
-    if (users[key].email === userEmail) {
-      return users[key];
+const getUserByEmail = function(userEmail, database) {
+  for (let user in database) {
+    if (database[user].email === userEmail) {
+      return database[user];
     }
   }
   return null;
@@ -43,7 +43,7 @@ const urlDatabase = {
 
 // users database
 const users = {
-  aJ48lW: { id: "aJ48lW" , email: "a@a.com", password: "123"}
+  aJ48lW: { id: "aJ48lW" , email: "a@a.com", password: "123"}  //need hashed password for this user
 };
 
 // function to isolate logged in users URLs only (id = req.cookies["user_id"]).
@@ -101,19 +101,21 @@ app.get("/register", (req, res) => {
 
 // client submits a registration request, email, password, and user_id are save to users obj + edge case handling
 app.post("/register", (req, res) => {
-  if (req.body.email === "" || req.body.password === "") {
+  const reqEmail = req.body.email;
+  const reqPassword = req.body.password;
+  if (reqEmail === "" || reqPassword === "") {
     return res.sendStatus(400);
   }
 
-  if (getUserByEmail(req.body.email) !== null) {
+  if (getUserByEmail(reqEmail, users) !== null) {
     return res.sendStatus(400);
   }
 
   const user_id = generateRandomString();
-  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  const hashedPassword = bcrypt.hashSync(reqPassword, 10);
   users[user_id] = { 
     id: user_id, 
-    email: req.body.email, 
+    email: reqEmail, 
     password: hashedPassword
   };
   req.session.user_id = user_id;
@@ -132,10 +134,10 @@ app.get("/login", (req, res) => {
 
 // client submits a login request, server determines if user exists, saves user_id in cookie + edge cases
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  const user = getUserByEmail(email);
-  if (user === null || bcrypt.compareSync(password, user.password) === false) {
+  const reqEmail = req.body.email;
+  const reqPassword = req.body.password;
+  const user = getUserByEmail(reqEmail, users);
+  if (user === null || bcrypt.compareSync(reqPassword, user.password) === false) {
     return res.sendStatus(403);
   }
 
