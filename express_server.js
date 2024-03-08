@@ -1,4 +1,5 @@
 const express = require("express");
+const { generateRandomString, getUserByEmail } = require('./helpers');
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
@@ -8,25 +9,7 @@ app.use(cookieSession({
 }));
 const PORT = 8080; // default port 8080
 
-// generate a random short URL ID
-const generateRandomString = function() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let shortURL = "";
-  for (let i = 0; i < 6; i++) {
-    shortURL += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return shortURL;
-};
 
-// user lookup
-const getUserByEmail = function(userEmail, database) {
-  for (let user in database) {
-    if (database[user].email === userEmail) {
-      return database[user];
-    }
-  }
-  return null;
-};
 
 // url database
 const urlDatabase = {
@@ -141,7 +124,7 @@ app.post("/login", (req, res) => {
     return res.sendStatus(403);
   }
 
-  if (user.email && bcrypt.compareSync(password, user.password) === true) {
+  if (user.email && bcrypt.compareSync(reqPassword, user.password) === true) {
     req.session.user_id = user.id;
     return res.redirect("/urls");
   }
