@@ -1,41 +1,33 @@
 const express = require("express");
-const { generateRandomString, getUserByEmail } = require('./helpers');
+const { generateRandomString, urlsForUser, getUserByEmail } = require('./helpers');
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
 app.use(cookieSession({
   name: 's3curs3$s!on',
-  keys: ['gr33negg$', 'dontDO!t', 'anDh@m', ]   
+  keys: ['gr33negg$', 'dontDO!t', 'anDh@m', ]
 }));
 const PORT = 8080; // default port 8080
 
-// url database
 const urlDatabase = {
-  //shortURL: { longURL: "", userID: user_id}
+  //shortURL: { longURL: "", userId: userId}
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userId: "aJ48lW"
+    userId: "zYiS3Y"
   },
   "9sm5xK": {
-    longURL: "http://www.google.com",
-    userId: "aJ48lW"
+    longURL: "http://www.google.ca",
+    userId: "zYiS3Y"
   },
 };
 
-// user database
 const users = {
-  aJ48lW: { id: "aJ48lW" , email: "a@a.com", password: "123"}  //need hashed password for this user
-};
-
-// function to isolate logged in users URLs only (id = req.cookies["user_id"]).
-const urlsForUser = function(id) {
-  let userUrls = {};
-  for (let shortURL in urlDatabase) {
-    if (id === urlDatabase[shortURL].userId) {
-      userUrls[shortURL] = { longURL: urlDatabase[shortURL].longURL, userId: urlDatabase[shortURL].userId };
-    }
+  //userId: { id: userId,  email: "", password: hashedPassword}
+  zYiS3Y: {
+    id: "zYiS3Y",
+    email: "bob@gmail.com",
+    password: "$2a$10$Ux.vuUZ/HYt2WJswfb9GA.EVAKQi1O067hOd.CQ4MCIfbo4nHGRma"
   }
-  return userUrls;
 };
 
 // set ejs as the view engine
@@ -44,86 +36,101 @@ app.set("view engine", "ejs");
 // set encoding to read URLs
 app.use(express.urlencoded({ extended: true }));
 
+// decode JSON from testing with chai-http (requests not coming from a form)
+app.use(express.json());
+
+// homepage
 app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-// render the urls page; urlDatabase and user_id (for _header) are accessible
-app.get("/urls", (req, res) => {
-  const userId = req.session.user_id;
-  if (!userId) {
-    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.redirect("/login");
   }
 
-  const userUrls = urlsForUser(userId);
-  const templateVars = { 
-    urls: userUrls, 
-    user: users[userId]
+  if (userIdCookie) {
+    return res.redirect('/urls');
+  }
+  
+});
+
+// server renders the urls page; urlDatabase and userId are accessible to _header
+app.get("/urls", (req, res) => {
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.status(403).send('Access Denied. Please <a href="/login">LOGIN</a> or <a href="/register">REGISTER</a> to proceed.\n');
+  }
+
+  const userUrls = urlsForUser(userIdCookie, urlDatabase);
+  const templateVars = {
+    urls: userUrls,
+    user: users[userIdCookie]
   };
   res.render("urls_index", templateVars);
 });
 
-// render the register page; user_id is accessible for _header
+// server renders the register page; userId is accessible to _header
 app.get("/register", (req, res) => {
-  const userId = req.session.user_id;
-  if (userId) {
+  const userIdCookie = req.session.userId;
+  if (userIdCookie) {
     return res.redirect("/urls");
   }
 
-  const templateVars = { 
-    user: users[userId] 
+  const templateVars = {
+    user: users[userIdCookie]
   };
-  res.render("register", templateVars);
+  res.render("urls_register", templateVars);
 });
 
-// client submits a registration request, email, password, and user_id are save to users obj + edge case handling
+// client submits a registration request; email, hashed password, and userId are saved to users obj; encrypted cookie set
 app.post("/register", (req, res) => {
   const reqEmail = req.body.email;
   const reqPassword = req.body.password;
-  if (reqEmail === "" || reqPassword === "") {
-    return res.sendStatus(400);
+
+  const emptyEmail = reqEmail === "";
+  const emptyPassword = reqPassword === "";
+  if (emptyEmail || emptyPassword) {
+    return res.send('Invalid email or password. Please try to <a href="/register">REGISTER</a> again.\n');
   }
 
-  if (getUserByEmail(reqEmail, users) !== null) {
-    return res.sendStatus(400);
+  const userFound = getUserByEmail(reqEmail, users) !== null;
+  if (userFound) {
+    return res.send('Email exists in database. Please <a href="/login">LOGIN</a> instead.\n');
   }
 
-  const user_id = generateRandomString();
+  const userId = generateRandomString();
   const hashedPassword = bcrypt.hashSync(reqPassword, 10);
-  users[user_id] = { 
-    id: user_id, 
-    email: reqEmail, 
+  users[userId] = {
+    id: userId,
+    email: reqEmail,
     password: hashedPassword
   };
-  req.session.user_id = user_id;
+  req.session.userId = userId;
   res.redirect("/urls");
 });
 
-// renders the login page
+// server renders the login page if logged in
 app.get("/login", (req, res) => {
-  const userId = req.session.user_id;
-  if (userId) {
+  const userIdCookie = req.session.userId;
+  if (userIdCookie) {
     return res.redirect("/urls");
   }
-  const templateVars = { user: users[userId] };
-  res.render("login", templateVars);
+
+  const templateVars = {
+    user: users[userIdCookie]
+  };
+  res.render("urls_login", templateVars);
 });
 
-// client submits a login request, server determines if user exists, saves user_id in cookie + edge cases
+// client submits a login request, server determines if user exists, and if so finds user's cookie
 app.post("/login", (req, res) => {
   const reqEmail = req.body.email;
   const reqPassword = req.body.password;
   const user = getUserByEmail(reqEmail, users);
   if (user === null || bcrypt.compareSync(reqPassword, user.password) === false) {
-    return res.sendStatus(403);
+    return res.send('Invalid email or password. Please try to <a href="/login">LOGIN</a> again, or <a href="/register">REGISTER</a> for an account to proceed.\n');
   }
 
-  if (user.email && bcrypt.compareSync(reqPassword, user.password) === true) {
-    req.session.user_id = user.id;
+  if (user !== null && bcrypt.compareSync(reqPassword, user.password) === true) {
+    req.session.userId = user.id;
     return res.redirect("/urls");
   }
 });
@@ -136,115 +143,113 @@ app.post("/logout", (req, res) => {
 
 // client submits longURL, if logged in server saves longURL in database & redirects new tinyURL page
 app.post("/urls", (req, res) => {
-  const userId = req.session.user_id;
-  if (!userId) {
-    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n'); 
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.status(403).send('Access Denied. Please <a href="/login">LOGIN</a> or <a href="/register">REGISTER to proceed.</a>\n');
   }
 
-  const id = generateRandomString();
+  const shortURL = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[id] = { 
+  urlDatabase[shortURL] = {
     longURL: longURL,
-    userId: userId 
+    userId: userIdCookie
   };
-  res.redirect(`/urls/${id}`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
-// if logged in, the server renders the new tiny URL form page
+// server renders tinyURL creation form if logged in
 app.get("/urls/new", (req, res) => {
-  const userId = req.session.user_id;
-  if (!userId) {
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
     return res.redirect("/login");
   }
 
-  const templateVars = { 
-    user: users[userId] 
+  const templateVars = {
+    user: users[userIdCookie]
   };
   res.render("urls_new", templateVars);
 });
 
-// renders tinyURL page that offers to update the longURL
+// server renders tinyURL page that offers to update the longURL
 app.get("/urls/:id", (req, res) => {
-  const userId = req.session.user_id;
-  if (!userId) {
-    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.status(403).send('Access Denied. Please <a href="/login">LOGIN</a> or <a href="/register">REGISTER to proceed.</a>\n');
   }
 
-  const urlObj = urlDatabase[req.params.id];
+  const shortURL = req.params.id;
+  const urlObj = urlDatabase[shortURL];
   if (!urlObj) {
-    return res.status(404).send('This short URL does not exist.\n');
+    return res.status(404).send('This short URL does not exist. <a href="/urls">GO BACK</a>\n');
   }
   
-  const urlBelongsToUser = userId === urlObj.userId
+  const urlBelongsToUser = userIdCookie === urlObj.userId;
   if (!urlBelongsToUser) {
-    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+    return res.status(403).send('You do not own this URL. <a href="/login">LOGIN</a> to the correct account or <a href="/urls">GO BACK</a>\n');
   }
 
   const templateVars = {
-    shortURL: req.params.id,
+    shortURL: shortURL,
     longURL: urlObj.longURL,
-    user: users[userId]
-  }
+    user: users[userIdCookie]
+  };
   res.render("urls_show", templateVars);
 });
 
 // client requests to update long URL and redirects to the same page w/ changes to longURL made
 app.post("/urls/:id", (req, res) => {
-  const shortURL = req.params.id;
-  
-  const userId = req.session.user_id;
-  if (!userId) {
-    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.status(403).send('Access Denied. Please <a href="/login">LOGIN</a> or <a href="/register">REGISTER to proceed.</a>\n');
   }
 
-  const urlObj = urlDatabase[shortURL];
-  if (!urlObj) {
-    return res.status(404).send('This short URL does not exist.\n');
+  const shortURL = req.params.id;
+  const shortUrlObj = urlDatabase[shortURL];
+  if (!shortUrlObj) {
+    return res.status(404).send('This short URL does not exist. <a href="/urls">GO BACK</a>\n');
   }
   
-  const urlBelongsToUser = userId === urlObj.userId
+  const urlBelongsToUser = userIdCookie === shortUrlObj.userId;
   if (!urlBelongsToUser) {
-    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+    return res.status(403).send('You do not own this URL. <a href="/login">LOGIN</a> to the correct account or <a href="/urls">GO BACK</a>\n');
   }
 
   const longURL = req.body.longURL;
-  urlDatabase[shortURL].longURL = longURL;
-  res.redirect(`/urls/${shortURL}`);
+  shortUrlObj.longURL = longURL;
+  res.redirect('/urls');
 });
 
 // client request to delete an existing tinyURL on the my URLs page
 app.post("/urls/:id/delete", (req, res) => {
+  const userIdCookie = req.session.userId;
+  if (!userIdCookie) {
+    return res.status(403).send('Access Denied. Please <a href="/login">LOGIN</a> or <a href="/register">REGISTER to proceed.</a>\n');
+  }
+  
   const shortURL = req.params.id;
-
-  const userId = req.session.user_id;
-  if (!userId) {
-    return res.status(403).send('You must be logged in to create a TinyURL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+  const shortUrlObj = urlDatabase[shortURL];
+  if (!shortUrlObj) {
+    return res.status(404).send('This short URL does not exist. <a href="/urls">GO BACK</a>\n');
   }
-
-  const urlObj = urlDatabase[shortURL];
-  if (!urlObj) {
-    return res.status(404).send('This short URL does not exist.\n');
-  }
-
-  const urlBelongsToUser = userId === urlObj.userId
+  
+  const urlBelongsToUser = userIdCookie === shortUrlObj.userId;
   if (!urlBelongsToUser) {
-    return res.status(403).send('You do not own this URL. Please <a href="/login">login</a> or <a href="/register">register.</a>\n');
+    return res.status(403).send('You do not own this URL. <a href="/login">LOGIN</a> to the correct account or <a href="/urls">GO BACK</a>\n');
   }
 
   delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 
-// client request to go to the shortURL link redirects to longURL website + edge cases
+// server redirects to the longURL website through shortURL link
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id;
-
-  const urlObj = urlDatabase[shortURL];
-  if (urlObj === undefined) {
-    return res.redirect("/u/error");
+  const shortUrlObj = urlDatabase[shortURL];
+  if (!shortUrlObj) {
+    return res.status(404).send(`This short URL does not exist. <a href="/urls">GO BACK</a>\n`);
   }
 
-  const longURL = urlObj.longURL;
+  const longURL = shortUrlObj.longURL;
   if (longURL.startsWith("http://") || longURL.startsWith("https://")) {
     return res.redirect(longURL);
   }
@@ -252,12 +257,7 @@ app.get("/u/:id", (req, res) => {
   res.redirect(`https://${longURL}`);
 });
 
-// error message page for no ID/long URL found
-app.get("/u/error", (req, res) => {
-  res.status(404).send('This short URL does not exist.\n');
-});
-
-// client request will result in urlDatabase being sent to the client as a JSON
+// server sends urlDatabase as JSON
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
