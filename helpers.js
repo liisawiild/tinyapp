@@ -8,6 +8,17 @@ const generateRandomString = function() {
   return shortURL;
 };
 
+// function to isolate logged in users URLs only (id = req.cookies["user_id"]).
+const urlsForUser = function(id, database) {
+  let userUrls = {};
+  for (let shortURL in database) {
+    if (id === database[shortURL].userId) {
+      userUrls[shortURL] = { longURL: database[shortURL].longURL, userId: database[shortURL].userId };
+    }
+  }
+  return userUrls;
+};
+
 // lookup user in database by email
 const getUserByEmail = function(userEmail, database) {
   for (let user in database) {
@@ -18,4 +29,4 @@ const getUserByEmail = function(userEmail, database) {
   return null;
 };
 
-module.exports = { generateRandomString, getUserByEmail }
+module.exports = { generateRandomString, urlsForUser, getUserByEmail };
