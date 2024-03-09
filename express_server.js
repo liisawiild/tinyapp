@@ -77,7 +77,7 @@ app.get("/register", (req, res) => {
   const templateVars = {
     user: users[userIdCookie]
   };
-  res.render("urls_register", templateVars);
+  res.render("register", templateVars);
 });
 
 // client submits a registration request; email, hashed password, and userId are saved to users obj; encrypted cookie set
