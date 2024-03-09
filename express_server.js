@@ -117,7 +117,7 @@ app.get("/login", (req, res) => {
   const templateVars = {
     user: users[userIdCookie]
   };
-  res.render("urls_login", templateVars);
+  res.render("login", templateVars);
 });
 
 // client submits a login request, server determines if user exists, and if so finds user's cookie
